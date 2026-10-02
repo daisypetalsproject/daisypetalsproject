@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Petal Project — Admin Login</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #e8f6fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Georgia, serif;
+        }
+
+        .login-card {
+            width: 360px;
+            background: white;
+            padding: 45px;
+            border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(80, 110, 120, 0.12);
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: 42px;
+            font-weight: normal;
+        }
+
+        .subtitle {
+            color: #777;
+            margin-bottom: 30px;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 15px 16px;
+            margin-bottom: 14px;
+            border: 1px solid #ddd;
+            border-radius: 14px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 14px;
+            background: #8aaa9a;
+            color: white;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #error {
+            margin-top: 15px;
+            color: #a55;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-card">
+
+    <h1>Petal Project</h1>
+
+    <div class="subtitle">
+        Admin login
+    </div>
+
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+    >
+
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+    >
+
+    <button id="loginButton">
+        Log in
+    </button>
+
+    <div id="error"></div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+    "https://nqnpbhweatfkqiitqhze.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_SLzJT4uryKV0LXiTfdt3YQ_5BtQVJFl";
+
+const supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+document
+    .getElementById("loginButton")
+    .addEventListener(
+        "click",
+        async () => {
+
+            const email =
+                document
+                    .getElementById("email")
+                    .value
+                    .trim();
+
+            const password =
+                document
+                    .getElementById("password")
+                    .value;
+
+            const errorBox =
+                document
+                    .getElementById("error");
+
+            errorBox.textContent = "";
+
+            const { error } =
+                await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+            if (error) {
+
+                errorBox.textContent =
+                    "Login failed. Please check your email and password.";
+
+                console.error(error);
+
+                return;
+            }
+
+            window.location.href =
+                "greenhouse.html";
+        }
+    );
+
+</script>
+
+</body>
+</html>

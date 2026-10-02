@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Petal Project — Admin</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap"
+    rel="stylesheet"
+>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    background: #e8f6fa;
+    color: #171717;
+
+    font-family:
+        "Instrument Serif",
+        Georgia,
+        serif;
+
+    padding: 60px;
+}
+
+h1 {
+    font-size: 56px;
+    font-weight: 400;
+
+    margin: 0 0 10px;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #777;
+
+    margin-bottom: 60px;
+}
+
+.section {
+    max-width: 850px;
+    margin-bottom: 70px;
+}
+
+.section-title {
+    font-size: 32px;
+    font-weight: 400;
+
+    margin: 0 0 25px;
+}
+
+.section-description {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    color: #888;
+
+    margin-bottom: 25px;
+}
+
+.petal-card {
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        2px 4px 8px rgba(0,0,0,.08);
+}
+
+.message {
+    font-size: 22px;
+    line-height: 1.4;
+
+    margin-bottom: 15px;
+}
+
+.date {
+    font-family: Arial, sans-serif;
+
+    font-size: 12px;
+
+    color: #999;
+
+    margin-bottom: 20px;
+}
+
+.deleted-date {
+    font-family: Arial, sans-serif;
+
+    font-size: 12px;
+
+    color: #999;
+
+    margin-bottom: 20px;
+}
+
+button {
+    border: none;
+
+    border-radius: 25px;
+
+    padding: 10px 22px;
+
+    font-family:
+        "Instrument Serif",
+        Georgia,
+        serif;
+
+    font-size: 16px;
+
+    cursor: pointer;
+
+    margin-right: 8px;
+}
+
+.approve {
+    background: #d7e6d3;
+}
+
+.approve:hover {
+    background: #cddfc9;
+}
+
+.delete {
+    background: #fbe5eb;
+}
+
+.delete:hover {
+    background: #f5d5de;
+}
+
+.restore {
+    background: #dce9ef;
+}
+
+.restore:hover {
+    background: #d0e1e8;
+}
+
+.permanent-delete {
+    background: #eee5e5;
+}
+
+.permanent-delete:hover {
+    background: #e6d9d9;
+}
+
+.empty {
+    color: #888;
+
+    font-size: 20px;
+
+    padding: 10px 0;
+}
+
+.count {
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    color: #999;
+
+    margin-left: 8px;
+}
+
+.warning {
+    background: #fff8e8;
+
+    border-radius: 15px;
+
+    padding: 15px 18px;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 13px;
+
+    color: #777;
+
+    margin-bottom: 25px;
+}
+
+@media (max-width: 800px) {
+
+    body {
+        padding: 30px 20px;
+    }
+
+    h1 {
+        font-size: 44px;
+    }
+
+    .section-title {
+        font-size: 28px;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<h1>Petal Project</h1>
+
+<div class="subtitle">
+    Petal moderation
+</div>
+
+
+<!-- ========================= -->
+<!-- PENDING -->
+<!-- ========================= -->
+
+<section class="section">
+
+    <h2 class="section-title">
+        Petals waiting to bloom
+        <span
+            class="count"
+            id="pendingCount"
+        ></span>
+    </h2>
+
+    <div
+        class="petals"
+        id="pendingPetals"
+    ></div>
+
+</section>
+
+
+<!-- ========================= -->
+<!-- APPROVED -->
+<!-- ========================= -->
+
+<section class="section">
+
+    <h2 class="section-title">
+        Approved petals
+        <span
+            class="count"
+            id="approvedCount"
+        ></span>
+    </h2>
+
+    <div class="section-description">
+        All approved petals are stored here.
+        The public website only displays a rotating selection.
+    </div>
+
+    <div
+        class="petals"
+        id="approvedPetals"
+    ></div>
+
+</section>
+
+
+<!-- ========================= -->
+<!-- RECENTLY DELETED -->
+<!-- ========================= -->
+
+<section class="section">
+
+    <h2 class="section-title">
+        Recently deleted
+        <span
+            class="count"
+            id="deletedCount"
+        ></span>
+    </h2>
+
+    <div class="warning">
+        Deleted petals are kept for 72 hours.
+        After that they are permanently removed.
+    </div>
+
+    <div
+        class="petals"
+        id="deletedPetals"
+    ></div>
+
+</section>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+const SUPABASE_URL = "https://nqnpbhweatfkqiitqhze.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_SLzJT4uryKV0LXiTfdt3YQ_5BtQVJFl";
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
+
+/* =========================
+   ADMIN LOGIN
+========================= */
+
+async function requireAdminLogin() {
+
+    const {
+        data: { session }
+    } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+        window.location.href = "login.html";
+        return false;
+    }
+
+    return true;
+}
+
+/* =========================================
+   STORAGE
+========================================= */
+
+async function getPetals() {
+
+    const { data, error } =
+        await supabaseClient
+            .from("petals")
+            .select("*")
+            .order("created_at", {
+                ascending: false
+            });
+
+    if (error) {
+        console.error(
+            "Error loading petals:",
+            error
+        );
+
+        return [];
+    }
+
+    return data || [];
+}
+
+
+/* =========================================
+   HTML SAFETY
+========================================= */
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================
+   LOAD EVERYTHING
+========================================= */
+
+
+async function loadPetals() {
+
+    const allPetals =
+        await getPetals();
+
+
+    const pending =
+        allPetals
+            .map(
+                (petal, index) => ({
+                    petal,
+                    index
+                })
+            )
+            .filter(
+                item =>
+                    !item.petal.approved &&
+                    !item.petal.deleted_at
+            );
+
+
+    const approved =
+        allPetals
+            .map(
+                (petal, index) => ({
+                    petal,
+                    index
+                })
+            )
+            .filter(
+                item =>
+                    item.petal.approved &&
+                    !item.petal.deleted_at
+            );
+
+
+    const deleted =
+        allPetals
+            .map(
+                (petal, index) => ({
+                    petal,
+                    index
+                })
+            )
+            .filter(
+                item =>
+                    item.petal.deleted_at
+            );
+
+
+    document.getElementById(
+        "pendingCount"
+    ).textContent =
+        `(${pending.length})`;
+
+
+    document.getElementById(
+        "approvedCount"
+    ).textContent =
+        `(${approved.length})`;
+
+
+    document.getElementById(
+        "deletedCount"
+    ).textContent =
+        `(${deleted.length})`;
+
+
+    renderPending(pending);
+
+    renderApproved(approved);
+
+    renderDeleted(deleted);
+
+}
+
+
+/* =========================================
+   PENDING
+========================================= */
+
+function renderPending(petals) {
+
+    const container =
+        document.getElementById(
+            "pendingPetals"
+        );
+
+    container.innerHTML = "";
+
+
+    if (petals.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty">No petals waiting for review.</div>';
+
+        return;
+
+    }
+
+
+    petals.forEach(
+        ({ petal, index }) => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "petal-card";
+
+
+            const date =
+                new Date(
+                    petal.created_at
+                );
+
+
+            card.innerHTML = `
+
+                <div class="message">
+                    ${escapeHTML(
+                        petal.message
+                    )}
+                </div>
+
+                <div class="date">
+                    Submitted
+                    ${date.toLocaleString()}
+                </div>
+
+                <button
+                    class="approve"
+                >
+                    Approve
+                </button>
+
+                <button
+                    class="delete"
+                >
+                    Delete
+                </button>
+
+            `;
+
+
+            card
+                .querySelector(".approve")
+                .addEventListener(
+                    "click",
+                    () =>
+                        approvePetal(index)
+                );
+
+
+            card
+                .querySelector(".delete")
+                .addEventListener(
+                    "click",
+                    () =>
+                        deletePetal(index)
+                );
+
+
+            container.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   APPROVED
+========================================= */
+
+function renderApproved(petals) {
+
+    const container =
+        document.getElementById(
+            "approvedPetals"
+        );
+
+    container.innerHTML = "";
+
+
+    if (petals.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty">No approved petals yet.</div>';
+
+        return;
+
+    }
+
+
+    petals.forEach(
+        ({ petal, index }) => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "petal-card";
+
+
+            const date =
+                new Date(
+                    petal.created_at
+                );
+
+
+            card.innerHTML = `
+
+                <div class="message">
+                    ${escapeHTML(
+                        petal.message
+                    )}
+                </div>
+
+                <div class="date">
+                    Submitted
+                    ${date.toLocaleString()}
+                </div>
+
+                <button
+                    class="delete"
+                >
+                    Delete
+                </button>
+
+            `;
+
+
+            card
+                .querySelector(".delete")
+                .addEventListener(
+                    "click",
+                    () =>
+                        deletePetal(index)
+                );
+
+
+            container.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   DELETED
+========================================= */
+
+function renderDeleted(petals) {
+
+    const container =
+        document.getElementById(
+            "deletedPetals"
+        );
+
+    container.innerHTML = "";
+
+
+    if (petals.length === 0) {
+
+        container.innerHTML =
+            '<div class="empty">Nothing recently deleted.</div>';
+
+        return;
+
+    }
+
+
+    petals.forEach(
+        ({ petal, index }) => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "petal-card";
+
+
+            const deletedTime =
+                new Date(
+                    petal.deleted_at
+                );
+
+
+            const expiresAt =
+                new Date(
+                    deletedTime.getTime() +
+                    72 * 60 * 60 * 1000
+                );
+
+
+            card.innerHTML = `
+
+                <div class="message">
+                    ${escapeHTML(
+                        petal.message
+                    )}
+                </div>
+
+                <div class="deleted-date">
+                    Deleted
+                    ${deletedTime.toLocaleString()}
+                    <br><br>
+                    Permanently removed after
+                    ${expiresAt.toLocaleString()}
+                </div>
+
+                <button class="restore">
+                    Restore
+                </button>
+
+                <button class="permanent-delete">
+                    Delete permanently
+                </button>
+
+            `;
+
+
+            card
+                .querySelector(".restore")
+                .addEventListener(
+                    "click",
+                    () =>
+                        restorePetal(index)
+                );
+
+
+            card
+                .querySelector(".permanent-delete")
+                .addEventListener(
+                    "click",
+                    () =>
+                        permanentlyDeletePetal(index)
+                );
+
+
+            container.appendChild(card);
+
+        }
+    );
+
+}
+
+
+/* =========================================
+   APPROVE
+========================================= */
+
+async function approvePetal(index) {
+
+    const petals =
+        await getPetals();
+
+
+    if (!petals[index]) {
+        return;
+    }
+
+
+    petals[index].approved =
+        true;
+
+
+    await supabaseClient
+    .from("petals")
+    .update({ approved: true })
+    .eq("id", petals[index].id);
+
+    loadPetals();
+
+}
+
+
+/* =========================================
+   DELETE → 72 HOUR TRASH
+========================================= */
+
+async function deletePetal(index) {
+
+    const petals =
+        await getPetals();
+
+
+    if (!petals[index]) {
+        return;
+    }
+
+
+    const deletedAt =
+        new Date().toISOString();
+
+
+    const { error } =
+        await supabaseClient
+            .from("petals")
+            .update({
+                deleted_at: deletedAt
+            })
+            .eq(
+                "id",
+                petals[index].id
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Delete error:",
+            error
+        );
+
+        return;
+
+    }
+
+
+    loadPetals();
+
+}
+
+/* =========================================
+   RESTORE
+========================================= */
+
+async function restorePetal(index) {
+
+    const petals =
+        await getPetals();
+
+
+    if (!petals[index]) {
+        return;
+    }
+
+
+    await supabaseClient
+    .from("petals")
+    .update({
+        deleted_at: null
+    })
+    .eq("id", petals[index].id);
+
+    loadPetals();
+
+}
+
+
+/* =========================================
+   PERMANENT DELETE
+========================================= */
+
+async function permanentlyDeletePetal(index) {
+
+    const confirmed =
+        confirm(
+            "Permanently delete this petal?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const petals =
+        await getPetals();
+
+
+    if (!petals[index]) {
+        return;
+    }
+
+
+    const petalId =
+        petals[index].id;
+
+
+    const { error } =
+        await supabaseClient
+            .from("petals")
+            .delete()
+            .eq(
+                "id",
+                petalId
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Permanent delete error:",
+            error
+        );
+
+        return;
+
+    }
+
+
+    loadPetals();
+
+}
+
+
+/* =========================================
+   START
+========================================= */
+
+requireAdminLogin().then(isAdmin => {
+
+    if (isAdmin) {
+        loadPetals();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
